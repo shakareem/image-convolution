@@ -4,7 +4,23 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.min
 
-suspend fun parallelConvolve(
+suspend fun pixelwiseConvolve(image: Array<DoubleArray>, kernel: Array<DoubleArray>) = parallelConvolve(image, kernel) { output, k ->
+    pixelwiseStrategy(image, k, output)
+}
+
+suspend fun columnsConvolve(image: Array<DoubleArray>, kernel: Array<DoubleArray>) = parallelConvolve(image, kernel) { output, k ->
+    columnsStrategy(image, k, output)
+}
+
+suspend fun rowsConvolve(image: Array<DoubleArray>, kernel: Array<DoubleArray>) = parallelConvolve(image, kernel) { output, k ->
+    rowsStrategy(image, k, output)
+}
+
+suspend fun allProcessorsConvolve(image: Array<DoubleArray>, kernel: Array<DoubleArray>) = parallelConvolve(image, kernel) { output, k ->
+    allProcessorsStrategy(image, k, output)
+}
+
+private suspend fun parallelConvolve(
     image: Array<DoubleArray>,
     kernel: Array<DoubleArray>,
     dispatchStrategy: suspend (output: Array<DoubleArray>, kernel: Array<DoubleArray>) -> Unit
@@ -17,7 +33,7 @@ suspend fun parallelConvolve(
     return output
 }
 
-suspend fun pixelwiseStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
+private suspend fun pixelwiseStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
     coroutineScope {
         for (y in 0 until image.size) {
             for (x in 0 until image[0].size) {
@@ -29,7 +45,7 @@ suspend fun pixelwiseStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArr
     }
 }
 
-suspend fun columnStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
+private suspend fun columnsStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
     coroutineScope {
         for (y in 0 until image.size) {
             launch(Dispatchers.Default) {
@@ -41,7 +57,7 @@ suspend fun columnStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>
     }
 }
 
-suspend fun rowsStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
+private suspend fun rowsStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
     coroutineScope {
         for (x in 0 until image[0].size) {
             launch(Dispatchers.Default) {
@@ -53,7 +69,7 @@ suspend fun rowsStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, 
     }
 }
 
-suspend fun allWorkersStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
+private suspend fun allProcessorsStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
     val imageHeight = image.size
     val imageWidth = image[0].size
     val numProcessors = Runtime.getRuntime().availableProcessors()
@@ -64,7 +80,7 @@ suspend fun allWorkersStrategy(image: Array<DoubleArray>, kernel: Array<DoubleAr
             val startRow = chunk * rowsPerChunk
             val endRow = min(startRow + rowsPerChunk, imageHeight)
 
-            if (startRow >= imageHeight) {
+            if (startRow <= imageHeight) {
                 launch(Dispatchers.Default) {
                     for (y in startRow until endRow) {
                         for (x in 0 until imageWidth) {

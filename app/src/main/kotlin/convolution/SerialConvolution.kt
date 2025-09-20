@@ -28,8 +28,11 @@ fun convolvePixel(image: Array<DoubleArray>, kernel: Array<DoubleArray>, y: Int,
         for (kx in 0 until kernelWidth) {
             val imageY = (y - kernelHeight / 2 + ky + imageHeight) % imageHeight
             val imageX = (x - kernelWidth / 2 + kx + imageWidth) % imageWidth
-            sum += kernel[ky][kx] * image[imageY][imageX]
+
+            // use reflected kernel (classical discrete convolution, not correlation)
+            sum += kernel[kernelHeight - 1 - ky][kernelWidth - 1 - kx] * image[imageY][imageX]
         }
     }
-    return sum.coerceIn(0.0, 255.0)
+    // working with images as math objects, so pixels can be (< 0) or (> 255)
+    return sum
 }
