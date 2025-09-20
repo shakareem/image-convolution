@@ -1,30 +1,78 @@
-import convolution.serialConvolve
+import convolution.convolvePixel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlin.math.min
 
-suspend fun allWorkersConvolve(image: Array<DoubleArray>, kernel: Array<DoubleArray>): Array<DoubleArray> {
+suspend fun parallelConvolve(
+    image: Array<DoubleArray>,
+    kernel: Array<DoubleArray>,
+    dispatchStrategy: suspend (output: Array<DoubleArray>, kernel: Array<DoubleArray>) -> Unit
+): Array<DoubleArray> {
     require(kernel.size % 2 == 1 && kernel[0].size % 2 == 1) { "Kernel dimensions must be odd" }
-    val height = image.size
-    val width = image[0].size
-    val output = Array(height) { DoubleArray(width) }
-    val workers = Runtime.getRuntime().availableProcessors()
+    val output = Array(image.size) { DoubleArray(image[0].size) }
     coroutineScope {
-        val chunkSize = (height + workers - 1) / workers
-        val jobs = (0 until workers).map { workerId ->
+        dispatchStrategy(output, kernel)
+    }
+    return output
+}
+
+suspend fun pixelwiseStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
+    coroutineScope {
+        for (y in 0 until image.size) {
+            for (x in 0 until image[0].size) {
+                launch(Dispatchers.Default) {
+                    output[y][x] = convolvePixel(image, kernel, y, x)
+                }
+            }
+        }
+    }
+}
+
+suspend fun columnStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
+    coroutineScope {
+        for (y in 0 until image.size) {
             launch(Dispatchers.Default) {
-                val start = workerId * chunkSize
-                val end = minOf(start + chunkSize, height)
-                if (start < end) {
-                    val part = serialConvolve(image.sliceArray(start until end), kernel)
-                    for (i in part.indices) {
-                        output[start + i] = part[i]
+                for (x in 0 until image[0].size) {
+                    output[y][x] = convolvePixel(image, kernel, y, x)
+                }
+            }
+        }
+    }
+}
+
+suspend fun rowsStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
+    coroutineScope {
+        for (x in 0 until image[0].size) {
+            launch(Dispatchers.Default) {
+                for (y in 0 until image.size) {
+                    output[y][x] = convolvePixel(image, kernel, y, x)
+                }
+            }
+        }
+    }
+}
+
+suspend fun allWorkersStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
+    val imageHeight = image.size
+    val imageWidth = image[0].size
+    val numProcessors = Runtime.getRuntime().availableProcessors()
+    val rowsPerChunk = (imageHeight + numProcessors - 1) / numProcessors
+
+    coroutineScope {
+        for (chunk in 0 until numProcessors) {
+            val startRow = chunk * rowsPerChunk
+            val endRow = min(startRow + rowsPerChunk, imageHeight)
+
+            if (startRow >= imageHeight) {
+                launch(Dispatchers.Default) {
+                    for (y in startRow until endRow) {
+                        for (x in 0 until imageWidth) {
+                            output[y][x] = convolvePixel(image, kernel, y, x)
+                        }
                     }
                 }
             }
         }
-        jobs.joinAll()
     }
-    return output
 }

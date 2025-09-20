@@ -1,30 +1,35 @@
 package convolution
 
 fun serialConvolve(image: Array<DoubleArray>, kernel: Array<DoubleArray>): Array<DoubleArray> {
+    require(kernel.size % 2 == 1 && kernel[0].size % 2 == 1) { "Kernel dimensions must be odd" }
+
     val imageHeight = image.size
     val imageWidth = image[0].size
-    val kernelHeight = kernel.size
-    val kernelWidth = kernel[0].size
-    require(kernelHeight % 2 == 1 && kernelWidth % 2 == 1) { "Kernel dimensions must be odd" }
-    val padHeight = kernelHeight / 2
-    val padWidth = kernelWidth / 2
 
     val output = Array(imageHeight) { DoubleArray(imageWidth) }
 
     for (y in 0 until imageHeight) {
         for (x in 0 until imageWidth) {
-            var sum = 0.0
-            for (ky in 0 until kernelHeight) {
-                for (kx in 0 until kernelWidth) {
-                    val imageY = (y - padHeight + ky + imageHeight) % imageHeight
-                    val imageX = (x - padWidth + kx + imageWidth) % imageWidth
-
-                    sum += kernel[ky][kx] * image[imageY][imageX]
-                }
-            }
-            output[y][x] = sum.coerceIn(0.0, 255.0)
+            output[y][x] = convolvePixel(image, kernel, y, x)
         }
     }
 
     return output
+}
+
+fun convolvePixel(image: Array<DoubleArray>, kernel: Array<DoubleArray>, y: Int, x: Int): Double {
+    val imageHeight = image.size
+    val imageWidth = image[0].size
+    val kernelHeight = kernel.size
+    val kernelWidth = kernel[0].size
+
+    var sum = 0.0
+    for (ky in 0 until kernelHeight) {
+        for (kx in 0 until kernelWidth) {
+            val imageY = (y - kernelHeight / 2 + ky + imageHeight) % imageHeight
+            val imageX = (x - kernelWidth / 2 + kx + imageWidth) % imageWidth
+            sum += kernel[ky][kx] * image[imageY][imageX]
+        }
+    }
+    return sum.coerceIn(0.0, 255.0)
 }
