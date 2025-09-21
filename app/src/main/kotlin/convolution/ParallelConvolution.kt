@@ -1,30 +1,32 @@
-import convolution.convolvePixel
+package convolution
+
+import images.Bitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.min
 
-suspend fun pixelwiseConvolve(image: Array<DoubleArray>, kernel: Array<DoubleArray>) = parallelConvolve(image, kernel) { output, k ->
+suspend fun pixelwiseConvolve(image: Bitmap, kernel: Bitmap) = parallelConvolve(image, kernel) { output, k ->
     pixelwiseStrategy(image, k, output)
 }
 
-suspend fun columnsConvolve(image: Array<DoubleArray>, kernel: Array<DoubleArray>) = parallelConvolve(image, kernel) { output, k ->
+suspend fun columnsConvolve(image: Bitmap, kernel: Bitmap) = parallelConvolve(image, kernel) { output, k ->
     columnsStrategy(image, k, output)
 }
 
-suspend fun rowsConvolve(image: Array<DoubleArray>, kernel: Array<DoubleArray>) = parallelConvolve(image, kernel) { output, k ->
+suspend fun rowsConvolve(image: Bitmap, kernel: Bitmap) = parallelConvolve(image, kernel) { output, k ->
     rowsStrategy(image, k, output)
 }
 
-suspend fun allProcessorsConvolve(image: Array<DoubleArray>, kernel: Array<DoubleArray>) = parallelConvolve(image, kernel) { output, k ->
+suspend fun allProcessorsConvolve(image: Bitmap, kernel: Bitmap) = parallelConvolve(image, kernel) { output, k ->
     allProcessorsStrategy(image, k, output)
 }
 
 private suspend fun parallelConvolve(
-    image: Array<DoubleArray>,
-    kernel: Array<DoubleArray>,
-    dispatchStrategy: suspend (output: Array<DoubleArray>, kernel: Array<DoubleArray>) -> Unit
-): Array<DoubleArray> {
+    image: Bitmap,
+    kernel: Bitmap,
+    dispatchStrategy: suspend (output: Bitmap, kernel: Bitmap) -> Unit
+): Bitmap {
     require(kernel.size % 2 == 1 && kernel[0].size % 2 == 1) { "Kernel dimensions must be odd" }
     val output = Array(image.size) { DoubleArray(image[0].size) }
     coroutineScope {
@@ -33,7 +35,7 @@ private suspend fun parallelConvolve(
     return output
 }
 
-private suspend fun pixelwiseStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
+private suspend fun pixelwiseStrategy(image: Bitmap, kernel: Bitmap, output: Bitmap) {
     coroutineScope {
         for (y in 0 until image.size) {
             for (x in 0 until image[0].size) {
@@ -45,7 +47,7 @@ private suspend fun pixelwiseStrategy(image: Array<DoubleArray>, kernel: Array<D
     }
 }
 
-private suspend fun columnsStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
+private suspend fun columnsStrategy(image: Bitmap, kernel: Bitmap, output: Bitmap) {
     coroutineScope {
         for (y in 0 until image.size) {
             launch(Dispatchers.Default) {
@@ -57,7 +59,7 @@ private suspend fun columnsStrategy(image: Array<DoubleArray>, kernel: Array<Dou
     }
 }
 
-private suspend fun rowsStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
+private suspend fun rowsStrategy(image: Bitmap, kernel: Bitmap, output: Bitmap) {
     coroutineScope {
         for (x in 0 until image[0].size) {
             launch(Dispatchers.Default) {
@@ -69,7 +71,7 @@ private suspend fun rowsStrategy(image: Array<DoubleArray>, kernel: Array<Double
     }
 }
 
-private suspend fun allProcessorsStrategy(image: Array<DoubleArray>, kernel: Array<DoubleArray>, output: Array<DoubleArray>) {
+private suspend fun allProcessorsStrategy(image: Bitmap, kernel: Bitmap, output: Bitmap) {
     val imageHeight = image.size
     val imageWidth = image[0].size
     val numProcessors = Runtime.getRuntime().availableProcessors()

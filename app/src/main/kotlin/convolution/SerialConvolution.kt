@@ -1,6 +1,8 @@
 package convolution
 
-fun serialConvolve(image: Array<DoubleArray>, kernel: Array<DoubleArray>): Array<DoubleArray> {
+import images.Bitmap
+
+fun serialConvolve(image: Bitmap, kernel: Bitmap): Bitmap {
     require(kernel.size % 2 == 1 && kernel[0].size % 2 == 1) { "Kernel dimensions must be odd" }
 
     val imageHeight = image.size
@@ -17,7 +19,7 @@ fun serialConvolve(image: Array<DoubleArray>, kernel: Array<DoubleArray>): Array
     return output
 }
 
-fun convolvePixel(image: Array<DoubleArray>, kernel: Array<DoubleArray>, y: Int, x: Int): Double {
+fun convolvePixel(image: Bitmap, kernel: Bitmap, y: Int, x: Int): Double {
     val imageHeight = image.size
     val imageWidth = image[0].size
     val kernelHeight = kernel.size

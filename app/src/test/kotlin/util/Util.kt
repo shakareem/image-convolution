@@ -1,11 +1,12 @@
 package util
 
+import images.Bitmap
 import org.junit.jupiter.api.Assertions.assertEquals
 import kotlin.random.Random
 
 fun assertImagesEqual(
-    img1: Array<DoubleArray>,
-    img2: Array<DoubleArray>,
+    img1: Bitmap,
+    img2: Bitmap,
     eps: Double = 1e-9
 ) {
     assertEquals(img1.size, img2.size, "Different image heights")
@@ -24,7 +25,7 @@ fun assertImagesEqual(
     }
 }
 
-fun randomImage(width: Int, height: Int, rnd: Random): Array<DoubleArray> {
+fun randomImage(width: Int, height: Int, rnd: Random): Bitmap {
     return Array(height) { DoubleArray(width) { rnd.nextDouble(0.0, 16.0) } }
 }
 
@@ -33,7 +34,7 @@ fun randomOddSize(max: Int, rnd: Random): Int {
     return choices[rnd.nextInt(choices.size)]
 }
 
-fun randomKernel(height: Int, width: Int, rnd: Random): Array<DoubleArray> {
+fun randomKernel(height: Int, width: Int, rnd: Random): Bitmap {
     val k = Array(height) { DoubleArray(width) { rnd.nextDouble() } }
     var sum = 0.0
     for (row in k) for (v in row) sum += v
