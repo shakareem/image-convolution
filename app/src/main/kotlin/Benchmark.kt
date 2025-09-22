@@ -27,7 +27,7 @@ fun main() {
     if (!inputDir.exists() || inputDir.listFiles().isNullOrEmpty()) {
         error("Input directory not found or empty: ${inputDir.absolutePath}")
     }
-    val outputDir = File("build/benchmark_output")
+    val outputDir = File("docs")
     if (!outputDir.exists()) outputDir.mkdirs()
 
     val kernel = diagonalMatrix(11)

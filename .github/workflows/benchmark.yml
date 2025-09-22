@@ -33,9 +33,6 @@ jobs:
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
 
-        mkdir -p docs
-        mv build/benchmark_output/benchmark.png docs/benchmark.png || true
-
         if ! grep -q '## Benchmark Results' README.md; then
           echo -e '\n## Benchmark Results\n\n![Benchmark](docs/benchmark.png)' >> README.md
         fi
