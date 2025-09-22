@@ -77,6 +77,8 @@ Running benchmark:
 
 ## Benchmark Results
 
+![Benchmark](docs/benchmark.png)
+
 > Note: Speedup depends on image size, number of images, and number of available CPU cores. Parallel strategies show most benefit on larger images.
 
 ## Dependencies
