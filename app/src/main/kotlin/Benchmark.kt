@@ -27,8 +27,11 @@ fun main() {
     if (!inputDir.exists() || inputDir.listFiles().isNullOrEmpty()) {
         error("Input directory not found or empty: ${inputDir.absolutePath}")
     }
-    val outputDir = File("docs")
+    val outputDir = File("build/benchmark_output")
     if (!outputDir.exists()) outputDir.mkdirs()
+
+    val docsDir = File("docs")
+    if (!docsDir.exists()) docsDir.mkdirs()
 
     val kernel = diagonalMatrix(11)
 
@@ -75,7 +78,7 @@ fun main() {
         }
     }
 
-    val csvFile = File(outputDir, "benchmark.csv")
+    val csvFile = File(docsDir, "benchmark.csv")
     csvFile.printWriter().use { out ->
         out.println("mode,buffer,time_ms")
         results.forEach { (mode, buffer, time) ->
@@ -98,7 +101,7 @@ fun main() {
         chart.addSeries("buffer=$buffer", modeLabels, times)
     }
 
-    BitmapEncoder.saveBitmap(chart, File(outputDir, "benchmark.png").path, BitmapEncoder.BitmapFormat.PNG)
+    BitmapEncoder.saveBitmap(chart, File(docsDir, "benchmark.png").path, BitmapEncoder.BitmapFormat.PNG)
     println("Benchmark completed. CSV saved to benchmark.csv, graph saved to benchmark.png")
 }
 
