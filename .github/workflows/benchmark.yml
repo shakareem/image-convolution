@@ -1,10 +1,8 @@
 name: Benchmark
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch: # возможность запускать вручную
+  workflow_dispatch:
+  pull_request:
 
 jobs:
   benchmark:
