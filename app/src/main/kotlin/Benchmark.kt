@@ -4,12 +4,8 @@ import org.knowm.xchart.CategoryChartBuilder
 import org.knowm.xchart.style.Styler
 import pipeline.Mode
 import pipeline.processDataset
-import java.awt.Color
-import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Paths
-import javax.imageio.ImageIO
-import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
 fun diagonalMatrix(size: Int): Array<DoubleArray> {
