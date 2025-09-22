@@ -23,14 +23,13 @@ fun diagonalMatrix(size: Int): Array<DoubleArray> {
 fun main() {
     val projectDir = Paths.get("").toAbsolutePath().toString()
     val inputDir = File(projectDir, "src/test/resources")
-    // generateDataset(inputDir)
     if (!inputDir.exists() || inputDir.listFiles().isNullOrEmpty()) {
         error("Input directory not found or empty: ${inputDir.absolutePath}")
     }
     val outputDir = File("build/benchmark_output")
     if (!outputDir.exists()) outputDir.mkdirs()
 
-    val docsDir = File("docs")
+    val docsDir = File("../docs")
     if (!docsDir.exists()) docsDir.mkdirs()
 
     val kernel = diagonalMatrix(11)
@@ -53,16 +52,14 @@ fun main() {
                 println("Run ${it + 1}: $time ms")
                 times.add(time)
             }
-
             val avgTime = times.average().toLong()
             println("Average: $avgTime ms\n")
-            results.add(Triple(mode.name, 1, avgTime))
+            results.add(Triple(mode.name, -1, avgTime))
             continue
         }
 
         for (buffer in bufferSizes) {
             println("Benchmarking $mode with buffer $buffer ...")
-
             val times = mutableListOf<Long>()
             repeat(repeats) {
                 val time = measureTimeMillis {
@@ -71,7 +68,6 @@ fun main() {
                 println("Run ${it + 1}: $time ms")
                 times.add(time)
             }
-
             val avgTime = times.average().toLong()
             println("Average: $avgTime ms\n")
             results.add(Triple(mode.name, buffer, avgTime))
@@ -82,7 +78,8 @@ fun main() {
     csvFile.printWriter().use { out ->
         out.println("mode,buffer,time_ms")
         results.forEach { (mode, buffer, time) ->
-            out.println("$mode,$buffer,$time")
+            val bufferStr = if (buffer == -1) "" else buffer.toString()
+            out.println("$mode,$bufferStr,$time")
         }
     }
 
@@ -94,65 +91,21 @@ fun main() {
 
     chart.styler.legendPosition = Styler.LegendPosition.InsideNE
 
+    val allModes = results.map { it.first }.distinct()
+
+    val serialTimes = allModes.map { mode ->
+        results.find { it.first == "SERIAL" }?.third?.toDouble()
+            ?.takeIf { mode == "SERIAL" } ?: Double.NaN
+    }
+    chart.addSeries("SERIAL", allModes, serialTimes)
+
     bufferSizes.forEach { buffer ->
-        val subset = results.filter { it.second == buffer }
-        val modeLabels = subset.map { it.first }
-        val times = subset.map { it.third }
-        chart.addSeries("buffer=$buffer", modeLabels, times)
+        val times = allModes.map { mode ->
+            results.find { it.first == mode && it.second == buffer }?.third?.toDouble() ?: Double.NaN
+        }
+        chart.addSeries("buffer=$buffer", allModes, times)
     }
 
     BitmapEncoder.saveBitmap(chart, File(docsDir, "benchmark.png").path, BitmapEncoder.BitmapFormat.PNG)
     println("Benchmark completed. CSV saved to benchmark.csv, graph saved to benchmark.png")
-}
-
-fun generateDataset(outDir: File) {
-    if (!outDir.exists()) outDir.mkdirs()
-
-    val size = 32
-    val types = listOf("gradient", "checker", "circle", "noise")
-
-    var counter = 1
-    for (type in types) {
-        repeat(4) { variant -> // 4 варианта каждого типа → 16 изображений
-            val name = "${type}_$variant.bmp"
-            generateImage(size, name, outDir) { x, y ->
-                when (type) {
-                    "gradient" -> {
-                        val v = ((255.0 * x / size) + variant * 4).toInt().coerceIn(0, 255)
-                        Color(v, v, v)
-                    }
-                    "checker" -> {
-                        val v = if ((x / 4 + y / 4 + variant) % 2 == 0) 255 else 0
-                        Color(v, v, v)
-                    }
-                    "circle" -> {
-                        val cx = size / 2
-                        val cy = size / 2
-                        val r = size / 3
-                        val dist = (x - cx) * (x - cx) + (y - cy) * (y - cy)
-                        val v = if (dist < r * r) 255 else 0
-                        Color(v, v, v)
-                    }
-                    "noise" -> {
-                        val v = (Random.nextInt(256) + variant * 4).coerceIn(0, 255)
-                        Color(v, v, v)
-                    }
-                    else -> Color(0, 0, 0)
-                }
-            }
-            counter++
-        }
-    }
-
-    println("Generated 16 test images in: ${outDir.absolutePath}")
-}
-
-fun generateImage(size: Int, name: String, outDir: File, pixel: (x: Int, y: Int) -> Color) {
-    val img = BufferedImage(size, size, BufferedImage.TYPE_BYTE_GRAY)
-    for (y in 0 until size) {
-        for (x in 0 until size) {
-            img.setRGB(x, y, pixel(x, y).rgb)
-        }
-    }
-    ImageIO.write(img, "bmp", File(outDir, name))
 }
