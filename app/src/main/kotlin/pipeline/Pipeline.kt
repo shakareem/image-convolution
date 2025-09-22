@@ -23,14 +23,15 @@ class Image(val bitmap: Bitmap, val name: String)
 
 fun processSingleFile(
     file: File,
-    outFile: File,
+    outDir: File,
     kernel: Bitmap,
     mode: Mode
 ) {
-    println("Processing ${file.path} -> ${outFile.path} with mode $mode")
-    val image = readImage(file.path)
+    println("Processing ${file.path} -> ${outDir.path + file.name} with mode $mode")
+    if (!outDir.exists()) outDir.mkdirs()
+    val image = readImage(file.absolutePath)
     val result = runBlocking { convolveWithMode(image, kernel, mode) }
-    writeImage(result, outFile.path)
+    writeImage(result, File(outDir, "convolved_" + file.name).path)
 }
 
 fun processDataset(
@@ -42,7 +43,7 @@ fun processDataset(
 ) = runBlocking {
     val inputImages = readDataset(bufferSize, inDirectory)
     val outputImages = processImages(bufferSize, inputImages, kernel, mode)
-    launch(Dispatchers.Default) { writeDataset(outDirectory, outputImages) }
+    writeDataset(outDirectory, outputImages)
 }
 
 private suspend fun convolveWithMode(
@@ -82,7 +83,7 @@ private fun CoroutineScope.processImages(
         for (image in images) {
             launch(Dispatchers.Default) {
                 val result = convolveWithMode(image.bitmap, kernel, mode)
-                send(Image(result, image.name))
+                send(Image(result, "convolved_" + image.name))
             }
         }
     }

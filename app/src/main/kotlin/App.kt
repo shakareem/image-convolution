@@ -20,8 +20,8 @@ fun main(args: Array<String>) {
     val output by parser.option(
         ArgType.String,
         shortName = "o",
-        description = "Output file or directory"
-    ).required()
+        description = "Output directory"
+    ).default(".")
 
     val filterName by parser.option(
         ArgType.String,

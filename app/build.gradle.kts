@@ -10,8 +10,10 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-    implementation("org.bytedeco:opencv-platform:4.10.0-1.5.11")
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.6")
+    implementation("org.knowm.xchart:xchart:3.8.2")
+    implementation("com.twelvemonkeys.imageio:imageio-bmp:3.9.4")
+    implementation("com.twelvemonkeys.imageio:imageio-core:3.9.4")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.0")
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.11.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.0")
@@ -29,4 +31,12 @@ tasks.register("fmt") {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.register<JavaExec>("benchmark") {
+    group = "benchmark"
+    description = "Run image processing benchmark"
+
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("BenchmarkKt")
 }
