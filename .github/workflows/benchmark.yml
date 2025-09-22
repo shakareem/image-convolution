@@ -2,7 +2,9 @@ name: Benchmark
 
 on:
   workflow_dispatch:
-  pull_request:
+  push:
+    branches:
+      - '**'
 
 jobs:
   benchmark:
@@ -11,12 +13,14 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
 
     - name: Set up JDK
       uses: actions/setup-java@v3
       with:
         distribution: temurin
-        java-version: 17
+        java-version: 21
 
     - name: Build project
       run: ./gradlew build
@@ -28,15 +32,17 @@ jobs:
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
+
         mkdir -p docs
-        cp benchmark.png docs/benchmark.png
-        if ! grep -q 'Benchmark Results' README.md; then
-          echo '## Benchmark Results\n\n![Benchmark](docs/benchmark.png)' >> README.md
-        else
-          sed -i '/Benchmark Results/,/\.png/ s|!\[Benchmark\](.*)|![Benchmark](docs/benchmark.png)|' README.md
+        mv build/benchmark_output/benchmark.png docs/benchmark.png || true
+
+        if ! grep -q '## Benchmark Results' README.md; then
+          echo -e '\n## Benchmark Results\n\n![Benchmark](docs/benchmark.png)' >> README.md
         fi
+
         git add README.md docs/benchmark.png
         git commit -m "Update benchmark results"
-        git push
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        git push origin "$branch"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
