@@ -1,30 +1,22 @@
-# Image Convolution — Task 1: Serial Implementation
+# Image Convolution — Task 2: Parallel Implementation
 
-A command-line tool for applying 2D convolution filters to grayscale images.
-This branch implements a **sequential (single-threaded)** convolution.
+This branch extends Task 1 with **parallel convolution strategies** using Kotlin coroutines.
 
-## Implementation Details
+## Parallelization Strategies
 
-- **Boundary conditions**: wrap-around (cyclic padding) — pixels outside the image are taken from the opposite edge
-- **Kernel convention**: classical discrete convolution (kernel is reflected), not correlation
-- **Pixel values**: not clamped during computation — only clamped to `[0, 255]` on write, preserving mathematical correctness for filter composition
-- **Image I/O**: `javax.imageio` (standard JDK), grayscale via luminance formula `0.299·R + 0.587·G + 0.114·B`
-
-## Available Filters
-
-| Name | Description |
+| Mode | Description |
 |------|-------------|
-| `id` | Identity (no change) |
-| `black` | Zero kernel (all black) |
-| `blur` | 3×3 box blur |
-| `sharpen` | 3×3 sharpening |
-| `edge` | 3×3 edge detection |
-| `left` / `right` | Shift filters |
+| `SERIAL` | Single-threaded (Task 1 baseline) |
+| `ROWS` | One coroutine per row — cache-friendly (row-major access) |
+| `COLUMNS` | One coroutine per column — cache-unfriendly (column-major access on row-major data) |
+| `GRID` | 2D rectangular grid of blocks — configurable `numBlocksY × numBlocksX` |
+| `ALLPROCESSORS` | Rows divided evenly across all CPU cores — minimal overhead |
+| `PIXELWISE` | One coroutine per pixel — extreme overhead, for observation only |
 
 ## Usage
 
 ```bash
-./gradlew run --args="-i input.bmp -o output.bmp -f blur"
+./gradlew run --args="-i input.bmp -o output.bmp -f blur -m ROWS"
 ```
 
 ### CLI Arguments
@@ -33,6 +25,7 @@ This branch implements a **sequential (single-threaded)** convolution.
 -i  Input image file (required)
 -o  Output image file (default: output.bmp)
 -f  Filter name: id, black, blur, sharpen, edge, left, right (required)
+-m  Mode: SERIAL, ROWS, COLUMNS, ALLPROCESSORS (default: ALLPROCESSORS)
 ```
 
 ## Running Tests
@@ -41,14 +34,17 @@ This branch implements a **sequential (single-threaded)** convolution.
 ./gradlew test
 ```
 
+All parallel strategies are verified to produce identical results to the serial implementation.
+
 ## Benchmarking
 
 ```bash
 ./gradlew benchmark
 ```
 
-Results are saved to `docs/benchmark_task1.csv`.
+Results are saved to `docs/benchmark_task2.csv`.
 
 ## Performance Analysis
 
-See [analysis/task1.md](analysis/task1.md) for full benchmark results and analysis.
+See [analysis/task2.md](analysis/task2.md) for full benchmark results, cache locality analysis,
+and comparison with Task 1 serial baseline.
